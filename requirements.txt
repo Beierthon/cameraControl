@@ -1,0 +1,5 @@
+python-dotenv
+supabase
+opencv-python
+numpy
+# Add any other libraries needed for advanced image analysis
