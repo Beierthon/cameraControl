@@ -41,9 +41,10 @@ def analyze_image_quality(image_path: str):
     print(f"Analyzing image: {image_path}")
     # Load the image
     img = cv2.imread(image_path)
+    from supabase_client import QUALITY_STATUS_GOOD, QUALITY_STATUS_BAD, QUALITY_STATUS_UNCERTAIN
     if img is None:
         print(f"Error: Could not load image from {image_path} for analysis.")
-        return 0.0, None # Return default/error values
+        return 0.0, QUALITY_STATUS_UNCERTAIN # Always return a valid int
 
     # --- Your Computer Vision Logic Goes Here ---
     # Examples:
@@ -57,8 +58,6 @@ def analyze_image_quality(image_path: str):
     quality_score = random.uniform(50.0, 100.0) # Random float score
 
     # Determine quality status ID based on score thresholds (align with your DB's print_statuses)
-    from supabase_client import QUALITY_STATUS_GOOD, QUALITY_STATUS_BAD, QUALITY_STATUS_UNCERTAIN
-    
     quality_status_id = QUALITY_STATUS_UNCERTAIN # Default
     if quality_score >= 90.0:
         quality_status_id = QUALITY_STATUS_GOOD

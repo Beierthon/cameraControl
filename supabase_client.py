@@ -1,4 +1,6 @@
 import os
+import datetime
+import time
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -50,9 +52,9 @@ def update_print_status(print_id: int, new_status_id: int, started_at=None, ende
     """Updates the status of a print job."""
     update_data = {'status': new_status_id}
     if new_status_id == STATUS_PRINTING and started_at is None: # Assuming 'printing' means it just started
-        update_data['started_at'] = 'now()'
+        update_data['started_at'] = datetime.datetime.now().isoformat()
     if ended_at is not None:
-        update_data['ended_at'] = 'now()'
+        update_data['ended_at'] = datetime.datetime.now().isoformat()
         
     try:
         response = supabase.from_('prints').update(update_data).eq('id', print_id).execute()
@@ -63,20 +65,18 @@ def update_print_status(print_id: int, new_status_id: int, started_at=None, ende
         print(f"Error updating print {print_id} status to {new_status_id}: {e}")
         return None
 
-def update_print_quality_and_finish(print_id: int, quality_score: float, quality_status_id: int, image_url: str):
-    """Updates print job with quality analysis results and sets ended_at."""
+def update_print_quality_and_finish(print_id: int, quality_status_id: int):
+    """Updates print job with quality status and sets ended_at."""
     try:
         response = supabase.from_('prints').update({
-            'quality_score': quality_score, # Make sure you add this column to your DB!
-            'quality_status_id': quality_status_id, # Make sure you add this column to your DB!
-            'object_image_url': image_url, # Make sure you add this column to your DB!
-            'ended_at': 'now()'
+            'quality': quality_status_id, # Only update the status field
+            'ended_at': datetime.datetime.now().isoformat()
         }).eq('id', print_id).execute()
         if response.data:
-            print(f"Successfully updated print {print_id} with quality results.")
+            print(f"Successfully updated print {print_id} with quality status.")
         return response.data
     except Exception as e:
-        print(f"Error updating print {print_id} with quality results: {e}")
+        print(f"Error updating print {print_id} with quality status: {e}")
         return None
 
 def upload_image_to_supabase(image_path: str, bucket_name: str = "printed-objects"):
