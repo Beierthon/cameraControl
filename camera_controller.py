@@ -2,6 +2,7 @@ import cv2
 import datetime
 import time # For time.sleep
 import os
+import zivid
 
 def take_photo(output_dir: str = "images"):
     """Captures an image from the default webcam and saves it."""
@@ -66,3 +67,34 @@ def analyze_image_quality(image_path: str):
     
     print(f"Analysis result: Score={quality_score:.2f}, Status ID={quality_status_id}")
     return quality_score, quality_status_id
+
+def take_photo_with_zivid(output_dir: str = "images"):
+    """Captures an image and point cloud from the Zivid camera and saves them."""
+    os.makedirs(output_dir, exist_ok=True)
+    app = zivid.Application()
+    print("Connecting to Zivid camera...")
+    camera = app.connect_camera()
+
+    print("Creating default capture settings...")
+    settings = zivid.Settings(
+        acquisitions=[zivid.Settings.Acquisition()],
+        color=zivid.Settings2D(acquisitions=[zivid.Settings2D.Acquisition()]),
+    )
+
+    print("Capturing frame...")
+    frame = camera.capture_2d_3d(settings)
+
+    image_file = os.path.join(output_dir, "ImageRGBA.png")
+    print(f"Saving 2D color image (sRGB color space) to file: {image_file}")
+    frame.frame_2d().image_rgba_srgb().save(image_file)
+
+    zdf_file = os.path.join(output_dir, "Frame.zdf")
+    print(f"Saving frame to file: {zdf_file}")
+    frame.save(zdf_file)
+
+    ply_file = os.path.join(output_dir, "PointCloud.ply")
+    print(f"Exporting point cloud to file: {ply_file}")
+    frame.save(ply_file)
+
+    print("Zivid capture complete.")
+    return image_file, zdf_file, ply_file

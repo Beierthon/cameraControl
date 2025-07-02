@@ -2,4 +2,5 @@ python-dotenv
 supabase
 opencv-python
 numpy
+requests
 # Add any other libraries needed for advanced image analysis
