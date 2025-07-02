@@ -4,36 +4,6 @@ import time # For time.sleep
 import os
 import zivid
 
-def take_photo(output_dir: str = "images"):
-    """Captures an image from the default webcam and saves it."""
-    os.makedirs(output_dir, exist_ok=True) # Ensure output directory exists
-
-    cap = cv2.VideoCapture(0) # 0 is typically the default webcam
-    if not cap.isOpened():
-        print("Error: Could not open camera. Make sure it's connected and drivers are installed.")
-        return None
-    
-    # Try to set higher resolution (optional)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    
-    # Give camera time to warm up (optional but good practice)
-    time.sleep(2) 
-
-    ret, frame = cap.read() # Read a frame
-    cap.release() # Release the camera immediately
-    cv2.destroyAllWindows() # Close any OpenCV windows
-
-    if ret:
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = os.path.join(output_dir, f"object_photo_{timestamp}.jpg")
-        cv2.imwrite(filename, frame)
-        print(f"Image saved to {filename}")
-        return filename
-    else:
-        print("Failed to grab frame from camera.")
-        return None
-
 def analyze_image_quality(image_path: str):
     """
     Analyzes the quality of a 3D printed object from an image.

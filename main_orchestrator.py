@@ -8,7 +8,7 @@ from supabase_client import (
     STATUS_PRINTING, STATUS_FAILED, STATUS_COMPLETED, QUALITY_STATUS_GOOD,
     QUALITY_STATUS_BAD, QUALITY_STATUS_UNCERTAIN
 )
-from camera_controller import take_photo, analyze_image_quality
+from camera_controller import take_photo_with_zivid, analyze_image_quality
 from socket_server import start_socket_server, send_command_to_pi, get_pi_message, is_pi_connected
 
 def download_stl_from_supabase(stl_url: str, print_id: int) -> str:
@@ -54,11 +54,12 @@ def orchestrate_workflow():
                     raise Exception("Pi did not confirm ROBOT_PICKUP_COMPLETE in time.")
                 print(f"Pi confirmed pickup for job #{print_id}.")
 
-                # --- Take a photo ---
-                photo_path = take_photo(output_dir="nuc_images")
-                if not photo_path:
-                    raise Exception("Failed to take photo.")
-                print(f"Photo taken for job #{print_id}.")
+                # --- Take a photo with Zivid ---
+                image_file, zdf_file, ply_file = take_photo_with_zivid(output_dir="data/raw")
+                if not image_file:
+                    raise Exception("Failed to take photo with Zivid.")
+                print(f"Photo taken for job #{print_id}: {image_file}")
+                photo_path = image_file  # for downstream analysis
 
                 # --- Analyze the photo ---
                 quality_score, quality_status_id = analyze_image_quality(photo_path)
