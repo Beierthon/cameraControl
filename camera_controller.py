@@ -7,34 +7,46 @@ import zivid
 def analyze_image_quality(image_path: str):
     """
     Analyzes the quality of a 3D printed object from an image.
-    This is a placeholder for your actual computer vision logic.
+    Uses STL-vs-PointCloud comparison and voxel analysis.
     """
     print(f"Analyzing image: {image_path}")
-    # Load the image
-    img = cv2.imread(image_path)
     from supabase_client import QUALITY_STATUS_GOOD, QUALITY_STATUS_BAD, QUALITY_STATUS_UNCERTAIN
-    if img is None:
-        print(f"Error: Could not load image from {image_path} for analysis.")
-        return 0.0, QUALITY_STATUS_UNCERTAIN # Always return a valid int
+    import sys
+    sys.path.append(os.path.join(os.path.dirname(__file__), 'analysis'))
+    from analysis.compare_stl_pointcloud import compare_stl_and_pointcloud
+    from analysis.voxel_analysis import voxel_analysis
 
-    # --- Your Computer Vision Logic Goes Here ---
-    # Examples:
-    # - Grayscale conversion: gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # - Edge detection: edges = cv2.Canny(gray, 100, 200)
-    # - Template matching: result = cv2.matchTemplate(gray, template, cv2.TM_CCOEFF_NORMED)
-    # - AI model inference: Load your TensorFlow/PyTorch model and predict quality
-    
-    # For now, a placeholder:
-    import random
-    quality_score = random.uniform(50.0, 100.0) # Random float score
+    # Define paths
+    stl_path = os.path.join(os.path.dirname(__file__), 'data', 'raw', 'CAD.stl')
+    ply_path = os.path.join(os.path.dirname(__file__), 'data', 'raw', 'PointCloud.ply')
 
-    # Determine quality status ID based on score thresholds (align with your DB's print_statuses)
-    quality_status_id = QUALITY_STATUS_UNCERTAIN # Default
+    # Check if files exist
+    if not os.path.exists(stl_path) or not os.path.exists(ply_path):
+        print(f"Error: STL or PLY file not found. STL: {stl_path}, PLY: {ply_path}")
+        return 0.0, QUALITY_STATUS_UNCERTAIN
+
+    # Run comparison
+    try:
+        points_with_distances_df, stats = compare_stl_and_pointcloud(stl_path, ply_path)
+        voxel_df = voxel_analysis(points_with_distances_df)
+    except Exception as e:
+        print(f"Error during STL/PLY analysis: {e}")
+        return 0.0, QUALITY_STATUS_UNCERTAIN
+
+    # Use mean of mean_distance as quality score
+    if voxel_df.empty:
+        print("Voxel analysis returned no data.")
+        return 0.0, QUALITY_STATUS_UNCERTAIN
+    quality_score = 100.0 - 1000.0 * voxel_df['mean_distance'].mean()  # Example: lower mean_distance = higher score
+    quality_score = max(0.0, min(100.0, quality_score))
+
+    # Determine quality status
+    quality_status_id = QUALITY_STATUS_UNCERTAIN
     if quality_score >= 90.0:
         quality_status_id = QUALITY_STATUS_GOOD
     elif quality_score < 70.0:
         quality_status_id = QUALITY_STATUS_BAD
-    
+
     print(f"Analysis result: Score={quality_score:.2f}, Status ID={quality_status_id}")
     return quality_score, quality_status_id
 
